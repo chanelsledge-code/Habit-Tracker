@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Habit Tracker ✨</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #D4845C;
+            --secondary: #9CAF88;
+            --accent: #FAF8F3;
+            --highlight: #D4AF37;
+            --milestone: #2C7873;
+            --background: #FFF9F0;
+            --text-dark: #3A3A3A;
+            --text-light: #6B6B6B;
+            --gray: #CCCCCC;
+            --yellow-warning: #FFD93D;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--background);
+            color: var(--text-dark);
+            line-height: 1.6;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 20px 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border-radius: 0 0 30px 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .date-display {
+            font-size: 16px;
+            opacity: 0.95;
+            margin-bottom: 8px;
+        }
+
+        .quote {
+            font-style: italic;
+            font-size: 14px;
+            opacity: 0.9;
+            max-width: 80%;
+            margin: 10px auto 0;
+        }
+
+        .streak-display {
+            background: white;
+            color: var(--primary);
+            padding: 15px 20px;
+            border-radius: 20px;
+            margin: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .streak-display.warning {
+            background: var(--yellow-warning);
+            color: var(--text-dark);
+        }
+
+        .streak-display .fire {
+            font-size: 24px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 8px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-light);
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            min-width: 80px;
+        }
+
+        .tab-button.active {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .habit-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            background: var(--accent);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .habit-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .habit-item.completed {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--milestone) 100%);
+            color: white;
+        }
+
+        .checkbox {
+            width: 28px;
+            height: 28px;
+            border: 3px solid var(--gray);
+            border-radius: 8px;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .habit-item.completed .checkbox {
+            background: white;
+            border-color: white;
+        }
+
+        .checkbox::after {
+            content: '✓';
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--secondary);
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s ease;
+        }
+
+        .habit-item.completed .checkbox::after {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .habit-label {
+            flex: 1;
+            font-size: 16px;
+        }
+
+        .habit-note {
+            font-size: 13px;
+            color: var(--text-light);
+            margin-left: 43px;
+            margin-top: -5px;
+        }
+
+        .habit-item.completed .habit-note {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .add-habit-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--highlight) 100%);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .add-habit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(212, 132, 92, 0.4);
+        }
+
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .day-cell {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent);
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        .day-cell.today {
+            border: 2px solid var(--primary);
+        }
+
+        .day-cell.complete {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .day-cell.partial {
+            background: var(--yellow-warning);
+        }
+
+        .day-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .day-percentage {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+
+        .progress-bar-container {
+            margin: 15px 0;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            height: 30px;
+            background: var(--accent);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary) 0%, var(--milestone) 100%);
+            transition: width 0.8s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 12px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .milestone-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--milestone);
+        }
+
+        .milestone-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--milestone);
+            margin-bottom: 10px;
+        }
+
+        .milestone-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--gray);
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .milestone-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .counter {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            background: var(--accent);
+            padding: 10px 20px;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
+
+        .counter-btn {
+            width: 35px;
+            height: 35px;
+            border: none;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .counter-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .counter-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .update-btn {
+            background: var(--milestone);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .update-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(44, 120, 115, 0.4);
+        }
+
+        .update-btn.highlight {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .celebration-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .celebration-overlay.active {
+            display: flex;
+        }
+
+        .celebration-content {
+            background: white;
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            max-width: 400px;
+            margin: 20px;
+            animation: popIn 0.5s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .celebration-emoji {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .celebration-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .celebration-message {
+            font-size: 16px;
+            color: var(--text-light);
+            margin-bottom: 25px;
+        }
+
+        .close-celebration {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: var(--primary);
+            position: absolute;
+            animation: confettiFall 3s linear forwards;
+        }
+
+        @keyframes confettiFall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .weekly-completion {
+            text-align: center;
+            font-size: 18px;
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--accent);
+            border-radius: 12px;
+        }
+
+        .completion-percentage {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .gauge-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+
+        .gauge {
+            text-align: center;
+        }
+
+        .gauge-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 6px solid var(--gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 18px;
+            font-weight: 700;
+            transition: all 0.5s ease;
+        }
+
+        .gauge-circle.good {
+            border-color: var(--secondary);
+            color: var(--secondary);
+        }
+
+        .gauge-label {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+
+            header h1 {
+                font-size: 24px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input-group {
+            margin: 15px 0;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: var(--highlight);
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 5px 5px 5px 0;
+        }
+
+        .badge.earned {
+            animation: bounceIn 0.5s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid var(--primary);
+            background: white;
+            color: var(--primary);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .chart-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: var(--accent);
+            border-radius: 15px;
+        }
+
+        .trend-line {
+            height: 150px;
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            padding: 10px 0;
+        }
+
+        .trend-bar {
+            flex: 1;
+            background: linear-gradient(to top, var(--primary), var(--secondary));
+            border-radius: 8px 8px 0 0;
+            min-height: 10px;
+            transition: height 0.5s ease;
+            position: relative;
+        }
+
+        .trend-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: var(--text-light);
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>✨ My Habit Tracker</h1>
+        <div class="date-display" id="dateDisplay"></div>
+        <div class="quote" id="quote"></div>
+    </header>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('today')">TODAY</button>
+            <button class="tab-button" onclick="switchTab('week')">WEEK</button>
+            <button class="tab-button" onclick="switchTab('month')">MONTH</button>
+            <button class="tab-button" onclick="switchTab('progress')">PROGRESS</button>
+        </div>
+
+        <!-- TODAY TAB -->
+        <div id="today" class="tab-content active">
+            <div class="streak-display" id="streakDisplay"></div>
+
+            <div class="section">
+                <div class="section-title">⭐ Non-Negotiables</div>
+                <div id="nonNegotiables"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📋 Additional Habits</div>
+                <div id="additionalHabits"></div>
+            </div>
+
+            <div class="weekly-completion">
+                <div>This week</div>
+                <div class="completion-percentage" id="weeklyPercentage">0%</div>
+                complete
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="switchTab('week')">View This Week</button>
+                <button class="nav-btn" onclick="switchTab('month')">Monthly Goals</button>
+            </div>
+        </div>
+
+        <!-- WEEK TAB -->
+        <div id="week" class="tab-content">
+            <div class="section">
+                <div class="section-title">📅 This Week at a Glance</div>
+                <div class="week-grid" id="weekGrid"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🗓️ Weekly Rituals</div>
+                <div id="weeklyRituals"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🧘 Teaching Schedule</div>
+                <div id="teachingSchedule"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📱 Content Creation</div>
+                <div>
+                    <div style="margin-bottom: 15px;">
+                        <strong>Instagram posts this week:</strong>
+                        <div class="counter">
+                            <button class="counter-btn" onclick="updateCounter('instagramPosts', -1)">−</button>
+                            <span class="counter-value" id="instagramPostsCounter">0</span>
+                            <button class="counter-btn" onclick="updateCounter('instagramPosts', 1)">+</button>
+                        </div>
+                    </div>
+                    <div id="podcastSection"></div>
+                </div>
+            </div>
+
+            <div class="weekly-completion">
+                <div>Weekly completion</div>
+                <div class="completion-percentage" id="weeklyCompletionPercentage">0%</div>
+            </div>
+        </div>
+
+        <!-- MONTH TAB -->
+        <div id="month" class="tab-content">
+            <div class="section">
+                <div class="section-title">🎯 Monthly Milestones</div>
+                <div class="timestamp" id="lastUpdated">Never updated</div>
+
+                <div style="margin-top: 20px;">
+                    <div class="milestone-card">
+                        <div class="milestone-title">⚖️ Weight Progress</div>
+                        <div class="input-group">
+                            <label class="input-label">Current Weight (lbs)</label>
+                            <input type="number" class="milestone-input" id="currentWeight"
+                                   placeholder="Enter current weight" step="0.1">
+                        </div>
+                        <div id="weightProgress"></div>
+                    </div>
+
+                    <div class="milestone-card">
+                        <div class="milestone-title">🧘 Yoga Membership</div>
+                        <div class="input-group">
+                            <label class="input-label">Current Member Count</label>
+                            <input type="number" class="milestone-input" id="memberCount"
+                                   placeholder="Enter member count">
+                        </div>
+                        <div id="memberProgress"></div>
+                    </div>
+
+                    <div class="milestone-card">
+                        <div class="milestone-title">💰 Yoga Revenue</div>
+                        <div class="input-group">
+                            <label class="input-label">Monthly Revenue ($)</label>
+                            <input type="number" class="milestone-input" id="monthlyRevenue"
+                                   placeholder="Enter monthly revenue">
+                        </div>
+                        <div id="revenueProgress"></div>
+                    </div>
+
+                    <div class="milestone-card">
+                        <div class="milestone-title">📚 Books Read</div>
+                        <div class="input-group">
+                            <label class="input-label">Books Completed This Month</label>
+                            <input type="number" class="milestone-input" id="booksThisMonth"
+                                   placeholder="Enter books read">
+                        </div>
+                        <div id="booksProgress"></div>
+                    </div>
+
+                    <div class="milestone-card">
+                        <div class="milestone-title">📸 Instagram Followers</div>
+                        <div class="input-group">
+                            <label class="input-label">Current Follower Count</label>
+                            <input type="number" class="milestone-input" id="followerCount"
+                                   placeholder="Enter follower count">
+                        </div>
+                        <div id="followersProgress"></div>
+                    </div>
+
+                    <div class="milestone-card">
+                        <div class="milestone-title">💳 Debt Reduction</div>
+                        <div class="input-group">
+                            <label class="input-label">Amount Paid Off to Date ($)</label>
+                            <input type="number" class="milestone-input" id="debtPaid"
+                                   placeholder="Enter amount paid">
+                        </div>
+                        <div id="debtProgress"></div>
+                    </div>
+
+                    <div id="podcastMilestone"></div>
+
+                    <div class="milestone-card">
+                        <div class="milestone-title">💍 Oura Ring Metrics</div>
+                        <div style="font-size: 12px; color: var(--text-light); margin-bottom: 15px;">
+                            Updated every Monday
+                        </div>
+                        <div class="gauge-container" id="ouraGauges">
+                            <div class="gauge">
+                                <div class="gauge-circle" id="sleepGauge">--</div>
+                                <div class="gauge-label">Sleep Score</div>
+                                <input type="number" class="milestone-input" id="sleepScore"
+                                       placeholder="Score" style="max-width: 80px; margin-top: 10px;">
+                            </div>
+                            <div class="gauge">
+                                <div class="gauge-circle" id="hrvGauge">--</div>
+                                <div class="gauge-label">HRV</div>
+                                <input type="number" class="milestone-input" id="hrvScore"
+                                       placeholder="Score" style="max-width: 80px; margin-top: 10px;">
+                            </div>
+                            <div class="gauge">
+                                <div class="gauge-circle" id="readinessGauge">--</div>
+                                <div class="gauge-label">Readiness</div>
+                                <input type="number" class="milestone-input" id="readinessScore"
+                                       placeholder="Score" style="max-width: 80px; margin-top: 10px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="update-btn" id="updateMonthlyBtn" onclick="updateMonthlyGoals()">
+                        💾 Update Monthly Goals
+                    </button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📊 Quick Summary</div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="booksThisMonthStat">0</div>
+                        <div class="stat-label">Books This Month</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="classesTaughtStat">0</div>
+                        <div class="stat-label">Classes Taught</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="weeklyAvgStat">0%</div>
+                        <div class="stat-label">Weekly Average</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="currentStreakStat">0</div>
+                        <div class="stat-label">Current Streak</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROGRESS TAB -->
+        <div id="progress" class="tab-content">
+            <div class="section">
+                <div class="section-title">🏆 Badges Earned</div>
+                <div id="badgesContainer"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📈 Year at a Glance</div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalBooksStat">0</div>
+                        <div class="stat-label">Total Books (Goal: 100)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="longestStreakStat">0</div>
+                        <div class="stat-label">Longest Streak</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalClassesStat">0</div>
+                        <div class="stat-label">Classes Taught</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="weeksPerfectStat">0</div>
+                        <div class="stat-label">Perfect Weeks</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📊 Trends</div>
+                <div class="chart-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">Weight Progress</div>
+                    <div class="trend-line" id="weightTrend"></div>
+                </div>
+                <div class="chart-container">
+                    <div style="font-weight: 600; margin-bottom: 10px;">Membership Growth</div>
+                    <div class="trend-line" id="memberTrend"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Celebration Overlay -->
+    <div class="celebration-overlay" id="celebrationOverlay">
+        <div class="celebration-content">
+            <div class="celebration-emoji" id="celebrationEmoji">🎉</div>
+            <div class="celebration-title" id="celebrationTitle">Amazing!</div>
+            <div class="celebration-message" id="celebrationMessage"></div>
+            <button class="close-celebration" onclick="closeCelebration()">Continue</button>
+        </div>
+    </div>
+
+    <script>
+        // Data structure
+        const APP_DATA = {
+            habits: {
+                nonNegotiables: [
+                    { id: 'meditation', label: 'Morning meditation (10 min)', completed: false },
+                    { id: 'oura', label: 'Oura ring check', completed: false },
+                    { id: 'reading', label: 'Reading (30 min)', completed: false }
+                ],
+                additional: [
+                    { id: 'supplements', label: 'Supplements taken', completed: false },
+                    { id: 'mealPrep', label: 'Meal prep eaten', completed: false },
+                    { id: 'yoga', label: 'Personal yoga practice', completed: false, hasNote: true, note: '' }
+                ]
+            },
+            weekly: {
+                monday: { id: 'mondayOura', label: 'Oura metrics review', completed: false },
+                sunday: [
+                    { id: 'sundayMealPrep', label: 'Meal prep completed', completed: false },
+                    { id: 'financialReview', label: 'Financial review (15 min)', completed: false },
+                    { id: 'contentPlanning', label: 'Content planning for yoga', completed: false },
+                    { id: 'instagramInsights', label: 'Instagram insights review', completed: false },
+                    { id: 'readingCheckin', label: 'Reading check-in', completed: false }
+                ],
+                teaching: [
+                    { id: 'tuesdayClass', label: 'Tuesday class taught', completed: false },
+                    { id: 'wednesdayClass', label: 'Wednesday class taught', completed: false },
+                    { id: 'thursdayClass', label: 'Thursday class taught', completed: false }
+                ]
+            },
+            counters: {
+                instagramPosts: 0,
+                podcastEpisodes: 0
+            },
+            monthly: {
+                weight: null,
+                members: null,
+                revenue: null,
+                booksThisMonth: null,
+                followers: null,
+                debtPaid: null,
+                podcastEpisodes: null,
+                sleep: null,
+                hrv: null,
+                readiness: null,
+                lastUpdated: null,
+                startingWeight: 160
+            },
+            streak: {
+                current: 0,
+                longest: 0,
+                lastCompletedDate: null,
+                gracePeriodUsed: false
+            },
+            badges: [],
+            history: {
+                dailyCompletion: {},
+                weightHistory: [],
+                memberHistory: []
+            }
+        };
+
+        // Motivational quotes
+        const quotes = [
+            "Progress, not perfection 💫",
+            "Every small step counts ✨",
+            "You're building something beautiful 🌱",
+            "Consistency creates magic ⭐",
+            "Trust the process 🌟",
+            "You're doing amazing 💪",
+            "One day at a time 🌸",
+            "Your future self will thank you 💝",
+            "Growth happens in small moments 🌿",
+            "Keep showing up for yourself 🎯"
+        ];
+
+        // Quarterly targets
+        const quarterlyTargets = {
+            1: { weight: 155, members: 10, revenue: 300, sleep: 75, hrv: 28, readiness: 80 },
+            2: { weight: 152, members: 30, revenue: 900, sleep: 78, hrv: 29, readiness: 83 },
+            3: { weight: 150, members: 60, revenue: 1800, sleep: 80, hrv: 30, readiness: 85 },
+            4: { weight: 150, members: 100, revenue: 3000, sleep: 80, hrv: 30, readiness: 85 }
+        };
+
+        // Initialize app
+        function init() {
+            loadData();
+            updateDate();
+            renderTodayTab();
+            renderWeekTab();
+            renderMonthTab();
+            renderProgressTab();
+            checkCelebrations();
+            addStrengthTraining();
+            addPodcastElements();
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('habitTrackerData');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                Object.assign(APP_DATA, parsed);
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('habitTrackerData', JSON.stringify(APP_DATA));
+        }
+
+        function updateDate() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('dateDisplay').textContent = now.toLocaleDateString('en-US', options);
+            document.getElementById('quote').textContent = quotes[Math.floor(Math.random() * quotes.length)];
+        }
+
+        function getCurrentQuarter() {
+            const month = new Date().getMonth() + 1;
+            return Math.ceil(month / 3);
+        }
+
+        function getDateString(date = new Date()) {
+            return date.toISOString().split('T')[0];
+        }
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+
+            // Refresh content
+            if (tabName === 'today') renderTodayTab();
+            if (tabName === 'week') renderWeekTab();
+            if (tabName === 'month') renderMonthTab();
+            if (tabName === 'progress') renderProgressTab();
+        }
+
+        function renderTodayTab() {
+            // Render non-negotiables
+            const nonNegContainer = document.getElementById('nonNegotiables');
+            nonNegContainer.innerHTML = APP_DATA.habits.nonNegotiables.map(habit =>
+                `<div class="habit-item ${habit.completed ? 'completed' : ''}" onclick="toggleHabit('nonNegotiables', '${habit.id}')">
+                    <div class="checkbox"></div>
+                    <div class="habit-label">${habit.label}</div>
+                </div>`
+            ).join('');
+
+            // Render additional habits
+            const additionalContainer = document.getElementById('additionalHabits');
+            additionalContainer.innerHTML = APP_DATA.habits.additional.map(habit =>
+                `<div class="habit-item ${habit.completed ? 'completed' : ''}" onclick="toggleHabit('additional', '${habit.id}')">
+                    <div class="checkbox"></div>
+                    <div class="habit-label">${habit.label}</div>
+                </div>`
+            ).join('');
+
+            // Update streak
+            updateStreakDisplay();
+
+            // Update weekly percentage
+            updateWeeklyPercentage();
+        }
+
+        function toggleHabit(category, habitId) {
+            const habit = APP_DATA.habits[category].find(h => h.id === habitId);
+            if (habit) {
+                habit.completed = !habit.completed;
+
+                // Track daily completion
+                const today = getDateString();
+                if (!APP_DATA.history.dailyCompletion[today]) {
+                    APP_DATA.history.dailyCompletion[today] = { habits: [], percentage: 0 };
+                }
+
+                // Update streak
+                updateStreak();
+
+                saveData();
+                renderTodayTab();
+
+                // Check for celebrations
+                if (habit.completed) {
+                    checkCelebrations();
+                }
+            }
+        }
+
+        function updateStreak() {
+            const today = getDateString();
+            const yesterday = getDateString(new Date(Date.now() - 86400000));
+            const dayBefore = getDateString(new Date(Date.now() - 172800000));
+
+            const todayComplete = checkDayComplete(today);
+            const yesterdayComplete = checkDayComplete(yesterday);
+            const dayBeforeComplete = checkDayComplete(dayBefore);
+
+            if (todayComplete) {
+                if (yesterdayComplete || APP_DATA.streak.lastCompletedDate === today) {
+                    if (APP_DATA.streak.lastCompletedDate !== today) {
+                        APP_DATA.streak.current++;
+                    }
+                } else if (!yesterdayComplete && dayBeforeComplete && !APP_DATA.streak.gracePeriodUsed) {
+                    // Grace period - 1 day missed
+                    APP_DATA.streak.gracePeriodUsed = true;
+                } else if (!yesterdayComplete && !dayBeforeComplete) {
+                    // Reset streak
+                    APP_DATA.streak.current = 1;
+                    APP_DATA.streak.gracePeriodUsed = false;
+                }
+
+                APP_DATA.streak.lastCompletedDate = today;
+
+                if (APP_DATA.streak.current > APP_DATA.streak.longest) {
+                    APP_DATA.streak.longest = APP_DATA.streak.current;
+                }
+            }
+
+            saveData();
+        }
+
+        function checkDayComplete(dateString) {
+            const allHabits = [...APP_DATA.habits.nonNegotiables, ...APP_DATA.habits.additional];
+            const completedCount = allHabits.filter(h => h.completed).length;
+            const totalCount = allHabits.length;
+            return completedCount >= totalCount * 0.8; // 80% completion
+        }
+
+        function updateStreakDisplay() {
+            const streakEl = document.getElementById('streakDisplay');
+            const today = getDateString();
+            const yesterday = getDateString(new Date(Date.now() - 86400000));
+
+            if (APP_DATA.streak.gracePeriodUsed && !checkDayComplete(today)) {
+                streakEl.className = 'streak-display warning';
+                streakEl.innerHTML = `<span class="fire">⚠️</span> Current streak: ${APP_DATA.streak.current} days (grace period used)`;
+            } else {
+                streakEl.className = 'streak-display';
+                streakEl.innerHTML = `<span class="fire">🔥</span> Current streak: ${APP_DATA.streak.current} days`;
+            }
+        }
+
+        function updateWeeklyPercentage() {
+            const weekPercentage = calculateWeekCompletion();
+            document.getElementById('weeklyPercentage').textContent = weekPercentage + '%';
+        }
+
+        function calculateWeekCompletion() {
+            const today = new Date();
+            const dayOfWeek = today.getDay(); // 0 = Sunday
+            let totalDays = dayOfWeek === 0 ? 7 : dayOfWeek;
+            let completedDays = 0;
+
+            for (let i = 0; i < totalDays; i++) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                const dateStr = getDateString(date);
+
+                if (APP_DATA.history.dailyCompletion[dateStr]) {
+                    const dayData = APP_DATA.history.dailyCompletion[dateStr];
+                    if (dayData.percentage >= 80) {
+                        completedDays++;
+                    }
+                }
+            }
+
+            return totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
+        }
+
+        function renderWeekTab() {
+            // Render week grid
+            const weekGrid = document.getElementById('weekGrid');
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - dayOfWeek);
+
+            let gridHTML = '';
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(startOfWeek);
+                date.setDate(startOfWeek.getDate() + i);
+                const dateStr = getDateString(date);
+                const isToday = dateStr === getDateString(today);
+
+                const allHabits = [...APP_DATA.habits.nonNegotiables, ...APP_DATA.habits.additional];
+                const completed = allHabits.filter(h => h.completed).length;
+                const total = allHabits.length;
+                const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+                // Store percentage
+                if (!APP_DATA.history.dailyCompletion[dateStr]) {
+                    APP_DATA.history.dailyCompletion[dateStr] = { habits: [], percentage: 0 };
+                }
+                APP_DATA.history.dailyCompletion[dateStr].percentage = percentage;
+
+                let cellClass = 'day-cell';
+                if (isToday) cellClass += ' today';
+                if (percentage >= 80) cellClass += ' complete';
+                else if (percentage > 0) cellClass += ' partial';
+
+                gridHTML += `
+                    <div class="${cellClass}">
+                        <div class="day-name">${dayNames[i]}</div>
+                        <div>${date.getDate()}</div>
+                        <div class="day-percentage">${percentage}%</div>
+                    </div>
+                `;
+            }
+
+            weekGrid.innerHTML = gridHTML;
+
+            // Render weekly rituals
+            renderWeeklyRituals();
+
+            // Render teaching schedule
+            renderTeachingSchedule();
+
+            // Update counters
+            document.getElementById('instagramPostsCounter').textContent = APP_DATA.counters.instagramPosts;
+
+            // Update weekly completion percentage
+            document.getElementById('weeklyCompletionPercentage').textContent = calculateWeekCompletion() + '%';
+
+            saveData();
+        }
+
+        function renderWeeklyRituals() {
+            const container = document.getElementById('weeklyRituals');
+            const today = new Date().getDay();
+
+            let html = '';
+
+            // Monday Oura review
+            if (today === 1) {
+                const monday = APP_DATA.weekly.monday;
+                html += `
+                    <div class="habit-item ${monday.completed ? 'completed' : ''}"
+                         onclick="toggleWeeklyHabit('monday', '${monday.id}')">
+                        <div class="checkbox"></div>
+                        <div class="habit-label">📊 ${monday.label}</div>
+                    </div>
+                `;
+            }
+
+            // Sunday rituals
+            if (today === 0) {
+                APP_DATA.weekly.sunday.forEach(ritual => {
+                    html += `
+                        <div class="habit-item ${ritual.completed ? 'completed' : ''}"
+                             onclick="toggleWeeklyHabit('sunday', '${ritual.id}')">
+                            <div class="checkbox"></div>
+                            <div class="habit-label">${ritual.label}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (!html) {
+                html = '<div style="color: var(--text-light); font-style: italic;">No rituals for today</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderTeachingSchedule() {
+            const container = document.getElementById('teachingSchedule');
+            const today = new Date().getDay();
+
+            let html = '';
+
+            APP_DATA.weekly.teaching.forEach(cls => {
+                const day = cls.id.includes('tuesday') ? 2 : cls.id.includes('wednesday') ? 3 : 4;
+
+                html += `
+                    <div class="habit-item ${cls.completed ? 'completed' : ''}"
+                         onclick="toggleWeeklyHabit('teaching', '${cls.id}')">
+                        <div class="checkbox"></div>
+                        <div class="habit-label">${cls.label}</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function toggleWeeklyHabit(category, habitId) {
+            let habit;
+
+            if (category === 'monday') {
+                habit = APP_DATA.weekly.monday;
+            } else if (category === 'sunday') {
+                habit = APP_DATA.weekly.sunday.find(h => h.id === habitId);
+            } else if (category === 'teaching') {
+                habit = APP_DATA.weekly.teaching.find(h => h.id === habitId);
+            }
+
+            if (habit) {
+                habit.completed = !habit.completed;
+                saveData();
+                renderWeekTab();
+                checkCelebrations();
+            }
+        }
+
+        function updateCounter(counterId, delta) {
+            APP_DATA.counters[counterId] = Math.max(0, APP_DATA.counters[counterId] + delta);
+            saveData();
+            renderWeekTab();
+        }
+
+        function renderMonthTab() {
+            const quarter = getCurrentQuarter();
+            const targets = quarterlyTargets[quarter];
+
+            // Weight progress
+            if (APP_DATA.monthly.weight) {
+                const lost = APP_DATA.monthly.startingWeight - APP_DATA.monthly.weight;
+                const targetLoss = APP_DATA.monthly.startingWeight - targets.weight;
+                const percentage = Math.min(100, Math.round((lost / targetLoss) * 100));
+
+                document.getElementById('weightProgress').innerHTML = `
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span>${lost.toFixed(1)} lbs lost</span>
+                            <span>Goal: ${targets.weight} lbs</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percentage}%">${percentage}%</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('weightProgress').innerHTML = '<div style="color: var(--text-light); font-style: italic;">Not yet updated</div>';
+            }
+
+            // Member progress
+            if (APP_DATA.monthly.members !== null) {
+                const percentage = Math.min(100, Math.round((APP_DATA.monthly.members / targets.members) * 100));
+                document.getElementById('memberProgress').innerHTML = `
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span>${APP_DATA.monthly.members} members</span>
+                            <span>Goal: ${targets.members}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percentage}%">${percentage}%</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('memberProgress').innerHTML = '<div style="color: var(--text-light); font-style: italic;">Not yet updated</div>';
+            }
+
+            // Revenue progress
+            if (APP_DATA.monthly.revenue !== null) {
+                const percentage = Math.min(100, Math.round((APP_DATA.monthly.revenue / targets.revenue) * 100));
+                document.getElementById('revenueProgress').innerHTML = `
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span>$${APP_DATA.monthly.revenue}</span>
+                            <span>Goal: $${targets.revenue}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percentage}%">${percentage}%</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('revenueProgress').innerHTML = '<div style="color: var(--text-light); font-style: italic;">Not yet updated</div>';
+            }
+
+            // Books progress
+            if (APP_DATA.monthly.booksThisMonth !== null) {
+                const totalBooks = calculateTotalBooks();
+                const percentage = Math.round((totalBooks / 100) * 100);
+                document.getElementById('booksProgress').innerHTML = `
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span>${APP_DATA.monthly.booksThisMonth} this month (${totalBooks} total)</span>
+                            <span>Year Goal: 100</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percentage}%">${percentage}%</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('booksProgress').innerHTML = '<div style="color: var(--text-light); font-style: italic;">Not yet updated</div>';
+            }
+
+            // Followers progress
+            if (APP_DATA.monthly.followers !== null) {
+                const percentage = Math.min(100, Math.round((APP_DATA.monthly.followers / 5000) * 100));
+                document.getElementById('followersProgress').innerHTML = `
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span>${APP_DATA.monthly.followers} followers</span>
+                            <span>Year Goal: 5,000</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percentage}%">${percentage}%</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('followersProgress').innerHTML = '<div style="color: var(--text-light); font-style: italic;">Not yet updated</div>';
+            }
+
+            // Debt progress
+            if (APP_DATA.monthly.debtPaid !== null) {
+                document.getElementById('debtProgress').innerHTML = `
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span>$${APP_DATA.monthly.debtPaid} paid off</span>
+                            <span>Goal: 50% reduction</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 50%">Keep going! 💪</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('debtProgress').innerHTML = '<div style="color: var(--text-light); font-style: italic;">Not yet updated</div>';
+            }
+
+            // Oura gauges
+            updateOuraGauges();
+
+            // Load input values
+            if (APP_DATA.monthly.weight) document.getElementById('currentWeight').value = APP_DATA.monthly.weight;
+            if (APP_DATA.monthly.members !== null) document.getElementById('memberCount').value = APP_DATA.monthly.members;
+            if (APP_DATA.monthly.revenue !== null) document.getElementById('monthlyRevenue').value = APP_DATA.monthly.revenue;
+            if (APP_DATA.monthly.booksThisMonth !== null) document.getElementById('booksThisMonth').value = APP_DATA.monthly.booksThisMonth;
+            if (APP_DATA.monthly.followers !== null) document.getElementById('followerCount').value = APP_DATA.monthly.followers;
+            if (APP_DATA.monthly.debtPaid !== null) document.getElementById('debtPaid').value = APP_DATA.monthly.debtPaid;
+            if (APP_DATA.monthly.sleep !== null) document.getElementById('sleepScore').value = APP_DATA.monthly.sleep;
+            if (APP_DATA.monthly.hrv !== null) document.getElementById('hrvScore').value = APP_DATA.monthly.hrv;
+            if (APP_DATA.monthly.readiness !== null) document.getElementById('readinessScore').value = APP_DATA.monthly.readiness;
+
+            // Last updated
+            if (APP_DATA.monthly.lastUpdated) {
+                const date = new Date(APP_DATA.monthly.lastUpdated);
+                document.getElementById('lastUpdated').textContent = `Last updated: ${date.toLocaleDateString()}`;
+            }
+
+            // Highlight update button on 1st of month
+            const today = new Date().getDate();
+            const updateBtn = document.getElementById('updateMonthlyBtn');
+            if (today === 1) {
+                updateBtn.classList.add('highlight');
+            } else {
+                updateBtn.classList.remove('highlight');
+            }
+
+            // Update quick summary stats
+            document.getElementById('booksThisMonthStat').textContent = APP_DATA.monthly.booksThisMonth || 0;
+            document.getElementById('classesTaughtStat').textContent = calculateClassesTaught();
+            document.getElementById('weeklyAvgStat').textContent = calculateWeekCompletion() + '%';
+            document.getElementById('currentStreakStat').textContent = APP_DATA.streak.current;
+        }
+
+        function updateOuraGauges() {
+            const quarter = getCurrentQuarter();
+            const targets = quarterlyTargets[quarter];
+
+            const sleepGauge = document.getElementById('sleepGauge');
+            const hrvGauge = document.getElementById('hrvGauge');
+            const readinessGauge = document.getElementById('readinessGauge');
+
+            if (APP_DATA.monthly.sleep !== null) {
+                sleepGauge.textContent = APP_DATA.monthly.sleep;
+                sleepGauge.className = 'gauge-circle ' + (APP_DATA.monthly.sleep >= targets.sleep ? 'good' : '');
+            }
+
+            if (APP_DATA.monthly.hrv !== null) {
+                hrvGauge.textContent = APP_DATA.monthly.hrv;
+                hrvGauge.className = 'gauge-circle ' + (APP_DATA.monthly.hrv >= targets.hrv ? 'good' : '');
+            }
+
+            if (APP_DATA.monthly.readiness !== null) {
+                readinessGauge.textContent = APP_DATA.monthly.readiness;
+                readinessGauge.className = 'gauge-circle ' + (APP_DATA.monthly.readiness >= targets.readiness ? 'good' : '');
+            }
+        }
+
+        function updateMonthlyGoals() {
+            APP_DATA.monthly.weight = parseFloat(document.getElementById('currentWeight').value) || null;
+            APP_DATA.monthly.members = parseInt(document.getElementById('memberCount').value) || null;
+            APP_DATA.monthly.revenue = parseFloat(document.getElementById('monthlyRevenue').value) || null;
+            APP_DATA.monthly.booksThisMonth = parseInt(document.getElementById('booksThisMonth').value) || null;
+            APP_DATA.monthly.followers = parseInt(document.getElementById('followerCount').value) || null;
+            APP_DATA.monthly.debtPaid = parseFloat(document.getElementById('debtPaid').value) || null;
+            APP_DATA.monthly.sleep = parseInt(document.getElementById('sleepScore').value) || null;
+            APP_DATA.monthly.hrv = parseInt(document.getElementById('hrvScore').value) || null;
+            APP_DATA.monthly.readiness = parseInt(document.getElementById('readinessScore').value) || null;
+            APP_DATA.monthly.lastUpdated = new Date().toISOString();
+
+            // Store weight history
+            if (APP_DATA.monthly.weight) {
+                APP_DATA.history.weightHistory.push({
+                    date: getDateString(),
+                    weight: APP_DATA.monthly.weight
+                });
+            }
+
+            // Store member history
+            if (APP_DATA.monthly.members !== null) {
+                APP_DATA.history.memberHistory.push({
+                    date: getDateString(),
+                    count: APP_DATA.monthly.members
+                });
+            }
+
+            saveData();
+            renderMonthTab();
+
+            // Celebrate
+            celebrate('🎯', 'Data Queen!', 'Your monthly goals are updated. Look at you being so organized! ✨');
+        }
+
+        function calculateTotalBooks() {
+            // This is simplified - in a real app you'd track monthly books
+            return APP_DATA.monthly.booksThisMonth || 0;
+        }
+
+        function calculateClassesTaught() {
+            return APP_DATA.weekly.teaching.filter(c => c.completed).length;
+        }
+
+        function renderProgressTab() {
+            // Render badges
+            const badgesContainer = document.getElementById('badgesContainer');
+            if (APP_DATA.badges.length > 0) {
+                badgesContainer.innerHTML = APP_DATA.badges.map(badge =>
+                    `<span class="badge earned">${badge}</span>`
+                ).join('');
+            } else {
+                badgesContainer.innerHTML = '<div style="color: var(--text-light); font-style: italic;">Start completing goals to earn badges! 🏆</div>';
+            }
+
+            // Update year stats
+            document.getElementById('totalBooksStat').textContent = calculateTotalBooks();
+            document.getElementById('longestStreakStat').textContent = APP_DATA.streak.longest;
+            document.getElementById('totalClassesStat').textContent = calculateClassesTaught();
+            document.getElementById('weeksPerfectStat').textContent = calculatePerfectWeeks();
+
+            // Render weight trend
+            renderTrend('weightTrend', APP_DATA.history.weightHistory, 'weight');
+
+            // Render member trend
+            renderTrend('memberTrend', APP_DATA.history.memberHistory, 'count');
+        }
+
+        function calculatePerfectWeeks() {
+            // Count weeks with 100% completion
+            let perfectWeeks = 0;
+            const weeks = Object.keys(APP_DATA.history.dailyCompletion).length / 7;
+            // Simplified calculation
+            return Math.floor(weeks);
+        }
+
+        function renderTrend(containerId, data, valueKey) {
+            const container = document.getElementById(containerId);
+
+            if (data.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-light); padding: 20px;">No data yet</div>';
+                return;
+            }
+
+            const maxValue = Math.max(...data.map(d => d[valueKey]));
+            const html = data.slice(-6).map(d => {
+                const height = (d[valueKey] / maxValue) * 100;
+                return `<div class="trend-bar" style="height: ${height}%">
+                    <div class="trend-label">${new Date(d.date).getMonth() + 1}/${new Date(d.date).getDate()}</div>
+                </div>`;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        function checkCelebrations() {
+            const weekPercentage = calculateWeekCompletion();
+
+            // 80%+ weekly completion
+            if (weekPercentage >= 80 && !APP_DATA.badges.includes('Week Warrior 🏆')) {
+                APP_DATA.badges.push('Week Warrior 🏆');
+                celebrate('🎊', 'Crushing It!', `You hit ${weekPercentage}% this week! You're absolutely crushing it! Keep this momentum going! 🌟`);
+            }
+
+            // All Sunday rituals complete
+            const sundayComplete = APP_DATA.weekly.sunday.every(r => r.completed);
+            if (sundayComplete && !APP_DATA.badges.includes('Sunday Setup Pro 📅')) {
+                APP_DATA.badges.push('Sunday Setup Pro 📅');
+                celebrate('✨', 'Sunday Success!', 'All your Sunday rituals are complete! You\'re setting yourself up for an amazing week! 🎯');
+            }
+
+            saveData();
+        }
+
+        function celebrate(emoji, title, message) {
+            document.getElementById('celebrationEmoji').textContent = emoji;
+            document.getElementById('celebrationTitle').textContent = title;
+            document.getElementById('celebrationMessage').textContent = message;
+            document.getElementById('celebrationOverlay').classList.add('active');
+
+            // Create confetti
+            createConfetti();
+        }
+
+        function createConfetti() {
+            const colors = ['#D4845C', '#9CAF88', '#D4AF37', '#2C7873'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    document.body.appendChild(confetti);
+
+                    setTimeout(() => confetti.remove(), 3000);
+                }, i * 30);
+            }
+        }
+
+        function closeCelebration() {
+            document.getElementById('celebrationOverlay').classList.remove('active');
+        }
+
+        function addStrengthTraining() {
+            const today = new Date();
+            if (today.getFullYear() === 2026 && today.getMonth() >= 3) { // April 2026 or later
+                const strengthHabit = APP_DATA.habits.additional.find(h => h.id === 'strength');
+                if (!strengthHabit) {
+                    APP_DATA.habits.additional.push({
+                        id: 'strength',
+                        label: 'Strength training',
+                        completed: false
+                    });
+                    saveData();
+                }
+            }
+        }
+
+        function addPodcastElements() {
+            const today = new Date();
+            if (today.getFullYear() === 2026 && today.getMonth() >= 4) { // May 2026 or later
+                // Add to week tab
+                const podcastSection = document.getElementById('podcastSection');
+                if (podcastSection && !podcastSection.innerHTML) {
+                    podcastSection.innerHTML = `
+                        <div style="margin-top: 15px;">
+                            <strong>Podcast recording:</strong>
+                            <div class="counter">
+                                <button class="counter-btn" onclick="updateCounter('podcastEpisodes', -1)">−</button>
+                                <span class="counter-value" id="podcastEpisodesCounter">0</span>
+                                <button class="counter-btn" onclick="updateCounter('podcastEpisodes', 1)">+</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Add to month tab
+                const podcastMilestone = document.getElementById('podcastMilestone');
+                if (podcastMilestone && !podcastMilestone.innerHTML) {
+                    podcastMilestone.innerHTML = `
+                        <div class="milestone-card">
+                            <div class="milestone-title">🎙️ Podcast Episodes</div>
+                            <div class="input-group">
+                                <label class="input-label">Episodes Published</label>
+                                <input type="number" class="milestone-input" id="podcastEpisodes"
+                                       placeholder="Enter episode count">
+                            </div>
+                            <div id="podcastProgress"></div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Initialize app on load
+        window.onload = init;
+
+        // Reset daily habits at midnight
+        setInterval(() => {
+            const now = new Date();
+            if (now.getHours() === 0 && now.getMinutes() === 0) {
+                APP_DATA.habits.nonNegotiables.forEach(h => h.completed = false);
+                APP_DATA.habits.additional.forEach(h => h.completed = false);
+                saveData();
+                renderTodayTab();
+            }
+        }, 60000); // Check every minute
+    </script>
+</body>
+</html>
