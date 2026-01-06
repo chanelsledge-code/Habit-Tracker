@@ -12,15 +12,15 @@
         }
 
         :root {
-            --primary: #D4845C;
-            --secondary: #9CAF88;
-            --accent: #FAF8F3;
-            --highlight: #D4AF37;
-            --milestone: #2C7873;
-            --background: #FFF9F0;
+            --primary: #B8A5D6;
+            --secondary: #F5B8C5;
+            --accent: #F4E8D0;
+            --highlight: #F4E8D0;
+            --milestone: #4A9B94;
+            --background: #FAF7F2;
             --text-dark: #3A3A3A;
             --text-light: #6B6B6B;
-            --gray: #CCCCCC;
+            --gray: #D4D4D4;
             --yellow-warning: #FFD93D;
         }
 
@@ -945,7 +945,8 @@
                 additional: [
                     { id: 'supplements', label: 'Supplements taken', completed: false },
                     { id: 'mealPrep', label: 'Meal prep eaten', completed: false },
-                    { id: 'yoga', label: 'Personal yoga practice', completed: false, hasNote: true, note: '' }
+                    { id: 'yoga', label: 'Personal yoga practice', completed: false, hasNote: true, note: '' },
+                    { id: 'spanish', label: '🇪🇸 Babbel Spanish (15 min)', completed: false }
                 ]
             },
             weekly: {
@@ -1648,7 +1649,7 @@
         }
 
         function createConfetti() {
-            const colors = ['#D4845C', '#9CAF88', '#D4AF37', '#2C7873'];
+            const colors = ['#B8A5D6', '#F5B8C5', '#F4E8D0', '#4A9B94'];
             for (let i = 0; i < 50; i++) {
                 setTimeout(() => {
                     const confetti = document.createElement('div');
