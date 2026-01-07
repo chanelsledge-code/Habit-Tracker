@@ -992,7 +992,8 @@
             history: {
                 dailyCompletion: {},
                 weightHistory: [],
-                memberHistory: []
+                memberHistory: [],
+                lastActiveDate: null
             }
         };
 
@@ -1021,6 +1022,7 @@
         // Initialize app
         function init() {
             loadData();
+            checkAndResetDailyHabits();
             updateDate();
             renderTodayTab();
             renderWeekTab();
@@ -1036,6 +1038,47 @@
             if (saved) {
                 const parsed = JSON.parse(saved);
                 Object.assign(APP_DATA, parsed);
+            }
+        }
+
+        function checkAndResetDailyHabits() {
+            const today = getDateString();
+            const lastDate = APP_DATA.history.lastActiveDate || null;
+
+            // If it's a new day, reset all daily habits
+            if (lastDate !== today) {
+                // Reset all habit completion states
+                APP_DATA.habits.nonNegotiables.forEach(h => h.completed = false);
+                APP_DATA.habits.additional.forEach(h => h.completed = false);
+
+                // Load today's habits from history if they exist
+                if (APP_DATA.history.dailyCompletion[today]) {
+                    const todayData = APP_DATA.history.dailyCompletion[today];
+                    if (todayData.completedHabits) {
+                        todayData.completedHabits.forEach(habitId => {
+                            const habit = [...APP_DATA.habits.nonNegotiables, ...APP_DATA.habits.additional]
+                                .find(h => h.id === habitId);
+                            if (habit) habit.completed = true;
+                        });
+                    }
+                }
+
+                APP_DATA.history.lastActiveDate = today;
+                saveData();
+            } else {
+                // Same day - load today's progress from history
+                if (APP_DATA.history.dailyCompletion[today] && APP_DATA.history.dailyCompletion[today].completedHabits) {
+                    const todayData = APP_DATA.history.dailyCompletion[today];
+                    // Reset all first
+                    APP_DATA.habits.nonNegotiables.forEach(h => h.completed = false);
+                    APP_DATA.habits.additional.forEach(h => h.completed = false);
+                    // Then set today's completed ones
+                    todayData.completedHabits.forEach(habitId => {
+                        const habit = [...APP_DATA.habits.nonNegotiables, ...APP_DATA.habits.additional]
+                            .find(h => h.id === habitId);
+                        if (habit) habit.completed = true;
+                    });
+                }
             }
         }
 
@@ -1109,8 +1152,18 @@
                 // Track daily completion
                 const today = getDateString();
                 if (!APP_DATA.history.dailyCompletion[today]) {
-                    APP_DATA.history.dailyCompletion[today] = { habits: [], percentage: 0 };
+                    APP_DATA.history.dailyCompletion[today] = { completedHabits: [], percentage: 0 };
                 }
+
+                // Save which habits are completed today
+                const allHabits = [...APP_DATA.habits.nonNegotiables, ...APP_DATA.habits.additional];
+                const completedHabits = allHabits.filter(h => h.completed).map(h => h.id);
+                const completedCount = completedHabits.length;
+                const totalCount = allHabits.length;
+                const percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+                APP_DATA.history.dailyCompletion[today].completedHabits = completedHabits;
+                APP_DATA.history.dailyCompletion[today].percentage = percentage;
 
                 // Update streak
                 updateStreak();
@@ -1159,10 +1212,21 @@
         }
 
         function checkDayComplete(dateString) {
-            const allHabits = [...APP_DATA.habits.nonNegotiables, ...APP_DATA.habits.additional];
-            const completedCount = allHabits.filter(h => h.completed).length;
-            const totalCount = allHabits.length;
-            return completedCount >= totalCount * 0.8; // 80% completion
+            const today = getDateString();
+
+            if (dateString === today) {
+                // For today, use current state
+                const allHabits = [...APP_DATA.habits.nonNegotiables, ...APP_DATA.habits.additional];
+                const completedCount = allHabits.filter(h => h.completed).length;
+                const totalCount = allHabits.length;
+                return completedCount >= totalCount * 0.8; // 80% completion
+            } else {
+                // For past days, use historical data
+                if (APP_DATA.history.dailyCompletion[dateString]) {
+                    return APP_DATA.history.dailyCompletion[dateString].percentage >= 80;
+                }
+                return false;
+            }
         }
 
         function updateStreakDisplay() {
@@ -1216,23 +1280,28 @@
 
             let gridHTML = '';
             const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const todayStr = getDateString(today);
 
             for (let i = 0; i < 7; i++) {
                 const date = new Date(startOfWeek);
                 date.setDate(startOfWeek.getDate() + i);
                 const dateStr = getDateString(date);
-                const isToday = dateStr === getDateString(today);
+                const isToday = dateStr === todayStr;
 
-                const allHabits = [...APP_DATA.habits.nonNegotiables, ...APP_DATA.habits.additional];
-                const completed = allHabits.filter(h => h.completed).length;
-                const total = allHabits.length;
-                const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+                let percentage = 0;
 
-                // Store percentage
-                if (!APP_DATA.history.dailyCompletion[dateStr]) {
-                    APP_DATA.history.dailyCompletion[dateStr] = { habits: [], percentage: 0 };
+                if (isToday) {
+                    // For today, calculate from current state
+                    const allHabits = [...APP_DATA.habits.nonNegotiables, ...APP_DATA.habits.additional];
+                    const completed = allHabits.filter(h => h.completed).length;
+                    const total = allHabits.length;
+                    percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+                } else {
+                    // For other days, use historical data
+                    if (APP_DATA.history.dailyCompletion[dateStr]) {
+                        percentage = APP_DATA.history.dailyCompletion[dateStr].percentage || 0;
+                    }
                 }
-                APP_DATA.history.dailyCompletion[dateStr].percentage = percentage;
 
                 let cellClass = 'day-cell';
                 if (isToday) cellClass += ' today';
