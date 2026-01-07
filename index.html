@@ -259,6 +259,12 @@
             background: var(--accent);
             padding: 8px;
             font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .day-cell[style*="cursor: pointer"]:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .day-cell.today {
@@ -933,7 +939,25 @@
         </div>
     </div>
 
+    <!-- Edit Past Day Overlay -->
+    <div class="celebration-overlay" id="editDayOverlay">
+        <div class="celebration-content" style="max-width: 500px;">
+            <div class="celebration-title" id="editDayTitle" style="color: var(--milestone);">Edit Day</div>
+            <div style="text-align: left; margin: 20px 0;">
+                <div style="font-weight: 600; margin-bottom: 15px; color: var(--primary);">Daily Habits</div>
+                <div id="editDayHabits"></div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="close-celebration" onclick="saveEditDay()" style="flex: 1; background: var(--milestone);">Save Changes</button>
+                <button class="close-celebration" onclick="closeEditDay()" style="flex: 1; background: var(--gray); color: var(--text-dark);">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Global variable for editing past days
+        let editingDate = null;
+
         // Data structure
         const APP_DATA = {
             habits: {
@@ -1308,8 +1332,12 @@
                 if (percentage >= 80) cellClass += ' complete';
                 else if (percentage > 0) cellClass += ' partial';
 
+                // Make past days clickable for editing
+                const clickHandler = !isToday ? `onclick="openEditDay('${dateStr}')"` : '';
+                const cursorStyle = !isToday ? 'style="cursor: pointer;"' : '';
+
                 gridHTML += `
-                    <div class="${cellClass}">
+                    <div class="${cellClass}" ${clickHandler} ${cursorStyle}>
                         <div class="day-name">${dayNames[i]}</div>
                         <div>${date.getDate()}</div>
                         <div class="day-percentage">${percentage}%</div>
@@ -1786,6 +1814,82 @@
                     `;
                 }
             }
+        }
+
+        // Edit past day functions
+        function openEditDay(dateStr) {
+            editingDate = dateStr;
+            const date = new Date(dateStr + 'T00:00:00');
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('editDayTitle').textContent = date.toLocaleDateString('en-US', options);
+
+            // Get completed habits for that day from history
+            const completedHabits = APP_DATA.history.dailyCompletion[dateStr]?.completedHabits || [];
+
+            // Build habit list
+            const allHabits = [
+                ...APP_DATA.habits.nonNegotiables.map(h => ({ ...h, completed: completedHabits.includes(h.id) })),
+                ...APP_DATA.habits.additional.map(h => ({ ...h, completed: completedHabits.includes(h.id) }))
+            ];
+
+            const habitsHTML = allHabits.map(habit => `
+                <div class="habit-item ${habit.completed ? 'completed' : ''}"
+                     onclick="toggleEditHabit('${habit.id}')"
+                     id="edit-habit-${habit.id}">
+                    <div class="checkbox"></div>
+                    <div class="habit-label">${habit.label}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('editDayHabits').innerHTML = habitsHTML;
+            document.getElementById('editDayOverlay').classList.add('active');
+        }
+
+        function toggleEditHabit(habitId) {
+            const habitEl = document.getElementById('edit-habit-' + habitId);
+            if (habitEl.classList.contains('completed')) {
+                habitEl.classList.remove('completed');
+            } else {
+                habitEl.classList.add('completed');
+            }
+        }
+
+        function saveEditDay() {
+            if (!editingDate) return;
+
+            // Get all checked habits from the modal
+            const allHabits = [
+                ...APP_DATA.habits.nonNegotiables,
+                ...APP_DATA.habits.additional
+            ];
+
+            const completedHabits = allHabits
+                .filter(h => {
+                    const el = document.getElementById('edit-habit-' + h.id);
+                    return el && el.classList.contains('completed');
+                })
+                .map(h => h.id);
+
+            const completedCount = completedHabits.length;
+            const totalCount = allHabits.length;
+            const percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+            // Save to history
+            if (!APP_DATA.history.dailyCompletion[editingDate]) {
+                APP_DATA.history.dailyCompletion[editingDate] = {};
+            }
+
+            APP_DATA.history.dailyCompletion[editingDate].completedHabits = completedHabits;
+            APP_DATA.history.dailyCompletion[editingDate].percentage = percentage;
+
+            saveData();
+            closeEditDay();
+            renderWeekTab(); // Refresh the week view to show updated percentage
+        }
+
+        function closeEditDay() {
+            document.getElementById('editDayOverlay').classList.remove('active');
+            editingDate = null;
         }
 
         // Initialize app on load
