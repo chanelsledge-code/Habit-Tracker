@@ -1017,7 +1017,8 @@
                 dailyCompletion: {},
                 weightHistory: [],
                 memberHistory: [],
-                lastActiveDate: null
+                lastActiveDate: null,
+                lastWeekReset: null
             }
         };
 
@@ -1047,6 +1048,7 @@
         function init() {
             loadData();
             checkAndResetDailyHabits();
+            checkAndResetWeeklyHabits();
             updateDate();
             renderTodayTab();
             renderWeekTab();
@@ -1069,41 +1071,84 @@
             const today = getDateString();
             const lastDate = APP_DATA.history.lastActiveDate || null;
 
-            // If it's a new day, reset all daily habits
-            if (lastDate !== today) {
-                // Reset all habit completion states
-                APP_DATA.habits.nonNegotiables.forEach(h => h.completed = false);
-                APP_DATA.habits.additional.forEach(h => h.completed = false);
+            // If it's a new day, save yesterday's data if needed, then reset
+            if (lastDate && lastDate !== today) {
+                // Save yesterday's final state if not already saved
+                const allHabits = [...APP_DATA.habits.nonNegotiables, ...APP_DATA.habits.additional];
+                const yesterdayCompleted = allHabits.filter(h => h.completed).map(h => h.id);
 
-                // Load today's habits from history if they exist
-                if (APP_DATA.history.dailyCompletion[today]) {
-                    const todayData = APP_DATA.history.dailyCompletion[today];
-                    if (todayData.completedHabits) {
-                        todayData.completedHabits.forEach(habitId => {
-                            const habit = [...APP_DATA.habits.nonNegotiables, ...APP_DATA.habits.additional]
-                                .find(h => h.id === habitId);
-                            if (habit) habit.completed = true;
-                        });
+                if (yesterdayCompleted.length > 0) {
+                    // Only save if there were some habits completed
+                    const percentage = Math.round((yesterdayCompleted.length / allHabits.length) * 100);
+
+                    if (!APP_DATA.history.dailyCompletion[lastDate]) {
+                        APP_DATA.history.dailyCompletion[lastDate] = {};
+                    }
+
+                    // Only overwrite if not already saved
+                    if (!APP_DATA.history.dailyCompletion[lastDate].completedHabits) {
+                        APP_DATA.history.dailyCompletion[lastDate].completedHabits = yesterdayCompleted;
+                        APP_DATA.history.dailyCompletion[lastDate].percentage = percentage;
                     }
                 }
-
-                APP_DATA.history.lastActiveDate = today;
-                saveData();
-            } else {
-                // Same day - load today's progress from history
-                if (APP_DATA.history.dailyCompletion[today] && APP_DATA.history.dailyCompletion[today].completedHabits) {
-                    const todayData = APP_DATA.history.dailyCompletion[today];
-                    // Reset all first
-                    APP_DATA.habits.nonNegotiables.forEach(h => h.completed = false);
-                    APP_DATA.habits.additional.forEach(h => h.completed = false);
-                    // Then set today's completed ones
-                    todayData.completedHabits.forEach(habitId => {
-                        const habit = [...APP_DATA.habits.nonNegotiables, ...APP_DATA.habits.additional]
-                            .find(h => h.id === habitId);
-                        if (habit) habit.completed = true;
-                    });
-                }
             }
+
+            // Always reset habits and load today's data
+            APP_DATA.habits.nonNegotiables.forEach(h => h.completed = false);
+            APP_DATA.habits.additional.forEach(h => h.completed = false);
+
+            // Load today's habits from history if they exist
+            if (APP_DATA.history.dailyCompletion[today] && APP_DATA.history.dailyCompletion[today].completedHabits) {
+                const todayData = APP_DATA.history.dailyCompletion[today];
+                todayData.completedHabits.forEach(habitId => {
+                    const habit = [...APP_DATA.habits.nonNegotiables, ...APP_DATA.habits.additional]
+                        .find(h => h.id === habitId);
+                    if (habit) habit.completed = true;
+                });
+            }
+
+            // Update last active date
+            APP_DATA.history.lastActiveDate = today;
+            saveData();
+        }
+
+        function checkAndResetWeeklyHabits() {
+            const today = new Date();
+            const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+            // Reset Monday Oura review if it's not Monday
+            if (dayOfWeek !== 1) {
+                APP_DATA.weekly.monday.completed = false;
+            }
+
+            // Reset Sunday rituals if it's not Sunday
+            if (dayOfWeek !== 0) {
+                APP_DATA.weekly.sunday.forEach(ritual => ritual.completed = false);
+            }
+
+            // Reset teaching schedule based on day
+            APP_DATA.weekly.teaching.forEach(cls => {
+                if (cls.id === 'tuesdayClass' && dayOfWeek !== 2) cls.completed = false;
+                if (cls.id === 'wednesdayClass' && dayOfWeek !== 3) cls.completed = false;
+                if (cls.id === 'thursdayClass' && dayOfWeek !== 4) cls.completed = false;
+            });
+
+            // Reset weekly counters on Sunday night/Monday morning
+            if (!APP_DATA.history.lastWeekReset) {
+                APP_DATA.history.lastWeekReset = getDateString();
+            }
+
+            const lastReset = new Date(APP_DATA.history.lastWeekReset);
+            const daysSinceReset = Math.floor((today - lastReset) / (1000 * 60 * 60 * 24));
+
+            // If it's been more than 7 days or it's a new week (Sunday)
+            if (daysSinceReset >= 7 || (dayOfWeek === 0 && lastReset.getDay() !== 0)) {
+                APP_DATA.counters.instagramPosts = 0;
+                APP_DATA.counters.podcastEpisodes = 0;
+                APP_DATA.history.lastWeekReset = getDateString();
+            }
+
+            saveData();
         }
 
         function saveData() {
@@ -1894,17 +1939,6 @@
 
         // Initialize app on load
         window.onload = init;
-
-        // Reset daily habits at midnight
-        setInterval(() => {
-            const now = new Date();
-            if (now.getHours() === 0 && now.getMinutes() === 0) {
-                APP_DATA.habits.nonNegotiables.forEach(h => h.completed = false);
-                APP_DATA.habits.additional.forEach(h => h.completed = false);
-                saveData();
-                renderTodayTab();
-            }
-        }, 60000); // Check every minute
     </script>
 </body>
 </html>
